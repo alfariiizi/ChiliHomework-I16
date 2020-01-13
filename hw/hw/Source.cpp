@@ -130,6 +130,22 @@ int main()
 	std::cout << "<< Product >>" << std::endl;
 	{
 		// code goes here
+		std::stringstream ss( nambies );
+		std::string buff;
+		int result = 1;
+		while( !ss.eof() )
+		{
+			ss >> buff;
+			for( const auto& i : numbers )
+			{
+				if( buff == i.str )
+				{
+					result *= i.num;
+					break;
+				}
+			}
+		}
+		std::cout << result << std::endl;
 	}
 	std::cout << "============================================" << std::endl << std::endl;
 
