@@ -26,15 +26,17 @@ struct Pube
 }; 
 
 // write your remove_erase_if template function here!
+template<class T, class unaryPredicate>
+void remove_erase_if( T& con,unaryPredicate pred )
+{
+	const auto new_end = std::remove_if( std::begin( con ),std::end( con ),pred );
+	con.erase( new_end,std::end( con ) );
+}
 
 // write your custom insertion operator here!
-std::ostream& operator<<( std::ostream& out,std::vector<Pube>& vecPub )
+std::ostream& operator<<( std::ostream& out,const Pube& rhs ) //that's must 'const'
 {
-	for( const auto& i : vecPub )
-	{
-		out << i.num << ' ' << i.str << std::endl;
-	}
-	return out;
+	return out << "(" << rhs.num << ',' << rhs.str << ")";
 }
 
 int main()
@@ -66,7 +68,6 @@ int main()
 	};
 	const std::string nambies = "eight one six eight three three eight five four two nine six nine";
 	const std::string numpies = { 6, 6, 5, 0, 6, 1, 8, 6 };
-	auto a = numpies;
 	// Problem 1:
 	// create a vector that contains 4 copies of each of the elements of memes
 	// sort it first by number descending (score from 3 to 1) and then name ascending
@@ -74,27 +75,27 @@ int main()
 	std::cout << "<< Sort Memes >>" << std::endl;
 	{
 		// code goes here
+		//copy 4x, the reason is to force std::sort to use quick sort, and quick sort just care to one order(urutan)
 		std::vector<Pube> copyMemes( memes.size() * 4 );
-		for( size_t i = 0; i < memes.size(); i++ )
+		auto a = copyMemes.begin();
+		for( size_t i = 0; i < 4; i++,a += memes.size() )
 		{
-			const int quadralTimes = int( i ) * 4;
-			for( int j = quadralTimes; j < ( quadralTimes + 4 ); j++ )
-			{
-				copyMemes[j] = memes[i];
-			}
+			std::copy( memes.begin(),memes.end(),a );
 		}
+		//minor
 		std::sort( copyMemes.begin(),copyMemes.end(),
-		[] ( const Pube& lhs,const Pube& rhs ) -> bool
+		[] ( const Pube& lhs,const Pube& rhs ) -> bool //maybe it must be 'const' too
 		{
-			return lhs.num > rhs.num;
+			return lhs.str < rhs.str;//ascending by name
 		} );
-		std::cout << copyMemes;
-		std::sort( copyMemes.begin(),copyMemes.end(),
-		[] ( const Pube& lhs,const Pube& rhs )
+		//major
+		std::stable_sort( copyMemes.begin(),copyMemes.end(),
+		[] ( const Pube& lhs,const Pube& rhs ) -> bool //maybe it must be 'const' too
 		{
-			return lhs.str < rhs.str;
+			return lhs.num > rhs.num;//descending by score
 		} );
-		std::cout << copyMemes;
+		//print to console
+		std::copy( copyMemes.begin(),copyMemes.end(),std::ostream_iterator<Pube>( std::cout,"\n" ) );
 	}
 	std::cout << "============================================" << std::endl << std::endl;
 
@@ -104,9 +105,22 @@ int main()
 	std::cout << "<< Number Words to Digits >>" << std::endl;
 	{
 		// code goes here
-		std::string copyNambies = nambies;
-		copyNambies.erase( std::remove( copyNambies.begin(),copyNambies.end(),' ' ),copyNambies.end() );
-		std::cout << copyNambies << std::endl;
+		std::string stringCopy;
+		std::string buff;
+		std::stringstream ss( nambies );
+		while( ss.good() )//it's mean that ss is good
+		{
+			std::getline( ss,buff,' ' );
+			for( const auto& i : numbers )
+			{
+				if( buff == i.str )
+				{
+					stringCopy.push_back( i.num + '0' );
+					break;
+				}
+			}
+		}
+		std::cout << stringCopy << std::endl;
 	}
 	std::cout << "============================================" << std::endl << std::endl;
 
@@ -115,12 +129,13 @@ int main()
 	// don't use std::find_if or other searches
 	std::cout << "<< Digits to Number Words >>" << std::endl;
 	{
-		// code goes here
-		for( const char& i : numpies )
+		auto sorted = numbers;
+		std::sort( sorted.begin(),sorted.end() );
+		std::transform( numpies.begin(),numpies.end(),std::ostream_iterator<std::string>( std::cout,", " ),
+		[&sorted]( int x )
 		{
-			std::cout << i + '0' - '0' << ' '; //fck, idk what's going on, it's seem didn't give effect but it did
-		}
-		std::cout << std::endl;
+			return sorted[x].str;
+		} );
 	}
 	std::cout << "============================================" << std::endl << std::endl;
 
@@ -130,22 +145,23 @@ int main()
 	std::cout << "<< Product >>" << std::endl;
 	{
 		// code goes here
-		std::stringstream ss( nambies );
+		std::vector<int> vec;
 		std::string buff;
-		int result = 1;
-		while( !ss.eof() )
+		std::stringstream ss( nambies );
+		while( ss.good() )//it's mean that ss is good
 		{
-			ss >> buff;
+			std::getline( ss,buff,' ' );
 			for( const auto& i : numbers )
 			{
 				if( buff == i.str )
 				{
-					result *= i.num;
+					vec.push_back( i.num );
 					break;
 				}
 			}
 		}
-		std::cout << result << std::endl;
+		//std::multiplies<std::string> that's gonna be error, because it's not make sense multiplies word
+		std::cout << std::accumulate( vec.begin(),vec.end(),1,std::multiplies<int>{} ) << std::endl;
 	}
 	std::cout << "============================================" << std::endl << std::endl;
 
@@ -155,6 +171,9 @@ int main()
 	std::cout << "<< Parallel Sum >>" << std::endl;
 	{
 		// code goes here
+		std::transform( numbers.begin(),numbers.end(),memes.begin(),std::ostream_iterator<int>( std::cout,", " ),
+						std::plus<int>() );
+		std::cout << std::endl;
 	}
 	std::cout << "============================================" << std::endl << std::endl;
 
@@ -167,7 +186,7 @@ int main()
 		// copy to get non-const vector
 		auto maymays = memes;
 		// remove all memes with score below 3
-		//remove_erase_if( maymays,[]( const Pube& p ) { return p.num < 3; } );
+		remove_erase_if( maymays,[]( const Pube& p ) { return p.num < 3; } );
 		// output results
 		std::copy( maymays.begin(),maymays.end(),std::ostream_iterator<Pube>( std::cout,"\n" ) );
 	}
